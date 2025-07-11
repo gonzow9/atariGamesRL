@@ -212,7 +212,7 @@ The following hyperparameters are used in the DQN algorithm:
 
 ---
 
-## **Following the Rubric**
+## **Heursitic Mechnaisms**
 
 - **Function Approximation Specialization:**
   - The neural network approximates Q-values, focusing on important state-action pairs based on the provided state representations.
