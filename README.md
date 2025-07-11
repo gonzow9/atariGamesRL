@@ -238,8 +238,8 @@ The following hyperparameters are used in the DQN algorithm:
 After training, the agent's performance is evaluated by observing:
 
 - **Total Reward per Episode:** Printed during training and evaluation.
-- **Agent Behavior:** During evaluation, watch how the agent moves, shoots, and avoids enemy fire.
-- **Learning Progress:** Analyze learning curves and total rewards to assess improvement over training episodes.
+- **Agent Behavior:** During evaluation, we can see how the agent moves, shoots, and avoids enemy fire.
+- **Learning Progress:** Analysing learning curves and total rewards to assess improvement over training episodes.
 - **Impact of State Representations and Exploration Strategies:**
-  - Compare results from different state representations and exploration methods.
-  - Discuss how these factors influence the agent's ability to learn effective policies.
+  - Comparing results from different state representations and exploration methods.
+  - Discussing how these factors influence the agent's ability to learn effective policies.
