@@ -107,6 +107,7 @@ def train_agent(ale, policy_net, target_net, optimizer, memory, episodes, approa
     steps_done = 0
     N_sa = {}  # initialise the state-action visit counts
     c = 50  # exploration constant for count-based exploration
+    epsilon = EPSILON_START  # decays across episodes instead of resetting each time
 
     for episode in range(episodes):
         ale.reset_game()
@@ -114,21 +115,18 @@ def train_agent(ale, policy_net, target_net, optimizer, memory, episodes, approa
         state = get_state(ram_state, approach)
         total_reward = 0
 
-        epsilon = EPSILON_START
         while not ale.game_over():
             if exploration == 'epsilon':
                 # Epsilon-greedy exploration
-                sample = random.random()
                 epsilon = max(EPSILON_END, epsilon * DECAY_RATE)
-                steps_done += 1
-
-                if sample < epsilon:
+                if random.random() < epsilon:
                     action_index = random.randint(0, ACTION_SIZE - 1)
                 else:
                     with torch.no_grad():
                         q_values = policy_net(state)
                         action_index = q_values.argmax().item()
                 action_code = VALID_ACTIONS[action_index]
+                steps_done += 1
                 
                 # Record data
                 action_counts[action_code] += 1
@@ -160,6 +158,8 @@ def train_agent(ale, policy_net, target_net, optimizer, memory, episodes, approa
                     
                     # record action data
                     action_counts[action_code] += 1
+            else:
+                raise ValueError("Invalid exploration strategy. Choose 'epsilon' or 'count'.")
 
             # Take action
             reward = ale.act(action_code)
@@ -226,6 +226,9 @@ def train_agent(ale, policy_net, target_net, optimizer, memory, episodes, approa
     with open('action_counts.pkl', 'wb') as f:
         pickle.dump(action_counts, f)
 
+    with open('epsilon_values.pkl', 'wb') as f:
+        pickle.dump(epsilon_values, f)
+
     return total_rewards
 
 
@@ -237,6 +240,7 @@ if __name__ == "__main__":
     parser.add_argument('--approach', type=int, choices=[1,2,3], default=1, help='State representation approach to use (1, 2, or 3).')
     parser.add_argument('--exploration', choices=['epsilon', 'count'], default='epsilon', help='Exploration strategy to use.')
     parser.add_argument('--seed', type=int, default=123, help='Random seed.')
+    parser.add_argument('--rom', type=str, default='Space Invaders.bin', help='Path to a legal Space Invaders ROM file (not included).')
     args = parser.parse_args()
 
     # Set random seeds
@@ -247,14 +251,17 @@ if __name__ == "__main__":
     # Initialize ALE
     ale = ALEInterface()
     ale.setInt('random_seed', args.seed)
-    ale.loadROM('Space Invaders.bin')
-    ale.setBool('display_screen', True)
-    ale.setBool('sound', True)
+    if not os.path.exists(args.rom):
+        raise FileNotFoundError(f"ROM not found at {args.rom}. Please supply a legal copy of the game ROM.")
+    ale.loadROM(args.rom)
+    # Disable visuals during training for faster learning; re-enable in eval.
+    ale.setBool('display_screen', False)
+    ale.setBool('sound', False)
     
     if args.mode == 'train':
         # Training mode
-        ale.setBool('display_screen', True)
-        ale.setBool('sound', True)
+        ale.setBool('display_screen', False)
+        ale.setBool('sound', False)
 
         # Determine input size based on approach
         if args.approach == 1:
@@ -302,7 +309,7 @@ if __name__ == "__main__":
             exit()
 
         for episode in range(args.episodes):
-            ale.loadROM('Space Invaders.bin')
+            ale.loadROM(args.rom)
             ale.setBool('display_screen', True)
             ale.setBool('sound', True)
             ale.reset_game()
